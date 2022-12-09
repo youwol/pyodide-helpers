@@ -1,4 +1,4 @@
-import { RawLog, View } from '../models'
+import { IdeState, RawLog, View } from '../models'
 import { ProjectState } from '../project-state'
 import { PyodideSetup } from '../../pyodide-setup'
 
@@ -64,7 +64,10 @@ export async function registerYwPyodideModule(
     })
 }
 
-export async function registerPyPlayModule(pyodide, appState: ProjectState) {
+export async function registerPyPlayModule(
+    pyodide,
+    appState: ProjectState<IdeState>,
+) {
     pyodide.registerJsModule('python_playground', {
         main_thread: {
             application: appState.getPythonProxy(),

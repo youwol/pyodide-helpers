@@ -1,4 +1,4 @@
-import { RawLog, View } from '../models'
+import { IdeState, RawLog, View } from '../models'
 import {
     BehaviorSubject,
     forkJoin,
@@ -37,7 +37,7 @@ export class MainThreadImplementation implements ExecutingImplementation {
      *
      * @group States
      */
-    public readonly appState: ProjectState
+    public readonly appState: ProjectState<IdeState>
 
     /**
      * @group Observables
@@ -54,7 +54,7 @@ export class MainThreadImplementation implements ExecutingImplementation {
      */
     public readonly createdOutputs$ = new BehaviorSubject<OutputViewNode[]>([])
 
-    constructor({ appState }: { appState: ProjectState }) {
+    constructor({ appState }: { appState: ProjectState<IdeState> }) {
         this.appState = appState
 
         merge(this.triggerOutputsCollect$, this.createdOutput$)
@@ -144,7 +144,7 @@ export class MainThreadImplementation implements ExecutingImplementation {
 }
 
 function registerPyPlayAddOns(
-    appState: ProjectState,
+    appState: ProjectState<IdeState>,
     createdOutput$: Subject<OutputViewNode>,
 ) {
     const outputs = {

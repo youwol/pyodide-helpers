@@ -1,5 +1,5 @@
 import { EnvironmentState, ExecutingImplementation } from '../environment.state'
-import { RawLog, WorkerCommon } from '../models'
+import { IdeState, RawLog, WorkerCommon } from '../models'
 import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import { filter, map, mergeMap, skip, take, tap } from 'rxjs/operators'
 import {
@@ -198,7 +198,7 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
     }
 
     getPythonProxy(
-        state: EnvironmentState<WorkersPoolImplementation>,
+        state: EnvironmentState<WorkersPoolImplementation, IdeState>,
         rawLog$: Subject<RawLog>,
     ) {
         return new WorkerPoolPythonProxy({ state, rawLog$ })
@@ -226,7 +226,7 @@ export class WorkerPoolPythonProxy {
     /**
      * @group Immutable Constants
      */
-    public readonly state: EnvironmentState<WorkersPoolImplementation>
+    public readonly state: EnvironmentState<WorkersPoolImplementation, IdeState>
 
     /**
      * @group Observables
@@ -234,7 +234,7 @@ export class WorkerPoolPythonProxy {
     public readonly rawLog$: Subject<RawLog>
 
     constructor(params: {
-        state: EnvironmentState<WorkersPoolImplementation>
+        state: EnvironmentState<WorkersPoolImplementation, IdeState>
         rawLog$: Subject<RawLog>
     }) {
         Object.assign(this, params)

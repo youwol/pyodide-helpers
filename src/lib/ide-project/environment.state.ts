@@ -8,7 +8,13 @@ import {
     ReplaySubject,
     Subject,
 } from 'rxjs'
-import { RawLog, Requirements, RunConfiguration, WorkerCommon } from './models'
+import {
+    IdeState,
+    RawLog,
+    Requirements,
+    RunConfiguration,
+    WorkerCommon,
+} from './models'
 import {
     CdnEvent,
     queryLoadingGraph,
@@ -97,11 +103,19 @@ function fetchLoadingGraph(requirements) {
 /**
  * @category State
  */
-export class EnvironmentState<T extends ExecutingImplementation> {
+export class EnvironmentState<
+    T extends ExecutingImplementation,
+    TIdeState extends IdeState,
+> {
     /**
      * @group Immutable Constants
      */
     public readonly executingImplementation: T
+
+    /**
+     * @group States
+     */
+    public readonly ideState: TIdeState
 
     /**
      * @group Immutable Constants
@@ -186,12 +200,12 @@ export class EnvironmentState<T extends ExecutingImplementation> {
         initialModel,
         rawLog$,
         executingImplementation,
-        createFileSystem,
+        createIdeState,
     }: {
         initialModel: WorkerCommon
         rawLog$: Subject<RawLog>
         executingImplementation: T
-        createFileSystem: ({ files }) => BehaviorSubject<Map<string, string>>
+        createIdeState: ({ files }) => TIdeState
     }) {
         this.executingImplementation = executingImplementation
         const signals = this.executingImplementation.signals
@@ -238,14 +252,11 @@ export class EnvironmentState<T extends ExecutingImplementation> {
             subject: new Subject(),
         }
         const nativeFiles = [requirementsFile, configurationsFile, locksFile]
-        this.fsMap$ = createFileSystem({
+
+        this.ideState = createIdeState({
             files: [...nativeFiles, ...initialModel.sources],
         })
-        /*
-        this.ideState = new Common.IdeState({
-            files: [...nativeFiles, ...initialModel.sources],
-            defaultFileSystem: Promise.resolve(new Map<string, string>()),
-        })*/
+
         nativeFiles.map((nativeFile) => {
             return this.fsMap$
                 .pipe(

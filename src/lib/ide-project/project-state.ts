@@ -1,13 +1,19 @@
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
-import { Project, RawLog } from './models'
+import { IdeState, Project, RawLog } from './models'
 import { take } from 'rxjs/operators'
 import { MainThreadImplementation } from './main-thread'
 import { WorkersPoolImplementation } from './workers-pool'
 
 import { EnvironmentState } from './environment.state'
 
-type MainThreadState = EnvironmentState<MainThreadImplementation>
-type WorkersPoolState = EnvironmentState<WorkersPoolImplementation>
+type MainThreadState<T extends IdeState> = EnvironmentState<
+    MainThreadImplementation,
+    T
+>
+type WorkersPoolState<T extends IdeState> = EnvironmentState<
+    WorkersPoolImplementation,
+    T
+>
 
 /**
  * See https://github.com/pyodide/pyodide/blob/main/docs/usage/faq.md for eventual improvements
@@ -15,16 +21,18 @@ type WorkersPoolState = EnvironmentState<WorkersPoolImplementation>
  * Regarding interruption of e.g. running worker: https://pyodide.org/en/stable/usage/keyboard-interrupts.html
  * @category State
  */
-export class ProjectState {
+export class ProjectState<TIdeState extends IdeState> {
     /**
      * @group Immutable Constants
      */
-    public readonly mainThreadState: MainThreadState
+    public readonly mainThreadState: MainThreadState<TIdeState>
 
     /**
      * @group Immutable Constants
      */
-    public readonly pyWorkersState$: BehaviorSubject<WorkersPoolState[]>
+    public readonly pyWorkersState$: BehaviorSubject<
+        WorkersPoolState<TIdeState>[]
+    >
 
     /**
      * @group Observables
@@ -33,7 +41,7 @@ export class ProjectState {
 
     constructor(params: {
         project: Project
-        createFileSystem: ({ files }) => BehaviorSubject<Map<string, string>>
+        createIdeState: ({ files }) => TIdeState
     }) {
         Object.assign(this, params)
 
@@ -41,30 +49,36 @@ export class ProjectState {
             level: 'info',
             message: 'Welcome to the python playground 🐍',
         })
-        this.mainThreadState = new EnvironmentState<MainThreadImplementation>({
+        this.mainThreadState = new EnvironmentState<
+            MainThreadImplementation,
+            TIdeState
+        >({
             initialModel: params.project,
             rawLog$: this.rawLog$,
             executingImplementation: new MainThreadImplementation({
                 appState: this,
             }),
-            createFileSystem: params.createFileSystem,
+            createIdeState: params.createIdeState,
         })
         const initialWorkers = (params.project.workersPools || []).map(
             (workersPool) => {
-                return new EnvironmentState<WorkersPoolImplementation>({
+                return new EnvironmentState<
+                    WorkersPoolImplementation,
+                    TIdeState
+                >({
                     initialModel: workersPool,
                     rawLog$: this.rawLog$,
                     executingImplementation: new WorkersPoolImplementation({
                         capacity: workersPool.capacity,
                         name: workersPool.name,
                     }),
-                    createFileSystem: params.createFileSystem,
+                    createIdeState: params.createIdeState,
                 })
             },
         )
-        this.pyWorkersState$ = new BehaviorSubject<WorkersPoolState[]>(
-            initialWorkers,
-        )
+        this.pyWorkersState$ = new BehaviorSubject<
+            WorkersPoolState<TIdeState>[]
+        >(initialWorkers)
     }
 
     run() {

@@ -1,4 +1,5 @@
 import { InstallLoadingGraphInputs } from '@youwol/cdn-client'
+import { BehaviorSubject } from 'rxjs'
 
 export type VirtualDOM = unknown
 
@@ -56,4 +57,12 @@ export interface RawLog {
 export interface View {
     name: string
     htmlElement: VirtualDOM | HTMLElement
+}
+
+export interface IdeState {
+    addFile({ path, content }: { path: string; content: string })
+    removeFile(path: string)
+    moveFile(path: string, newPath: string)
+
+    fsMap$: BehaviorSubject<Map<string, string>>
 }
