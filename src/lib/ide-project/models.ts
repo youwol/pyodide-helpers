@@ -63,6 +63,14 @@ export interface IdeState {
     addFile({ path, content }: { path: string; content: string })
     removeFile(path: string)
     moveFile(path: string, newPath: string)
-
+    update({
+        path,
+        content,
+        updateOrigin,
+    }: {
+        path: string
+        content: string
+        updateOrigin: { uid: string }
+    })
     fsMap$: BehaviorSubject<Map<string, string>>
 }
