@@ -248,7 +248,7 @@ export class WorkerPoolPythonProxy {
             self[PyodideSetup.ExportedPyodideInstanceName],
             input,
         )
-        const filesystem = this.state.fsMap$.value
+        const filesystem = this.state.ideState.fsMap$.value
         const src = patchPythonSrc(`
 from ${input.entryPoint.file} import ${input.entryPoint.function}       
 result = ${input.entryPoint.function}(test_glob_var)
