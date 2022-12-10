@@ -125,11 +125,6 @@ export class EnvironmentState<
     /**
      * @group Observables
      */
-    public readonly fsMap$: BehaviorSubject<Map<string, string>>
-
-    /**
-     * @group Observables
-     */
     public readonly requirements$ = new BehaviorSubject<Requirements>({
         pythonPackages: [],
         javascriptPackages: { modules: [], aliases: {} },
@@ -258,15 +253,15 @@ export class EnvironmentState<
         })
 
         nativeFiles.map((nativeFile) => {
-            return this.fsMap$
+            return this.ideState.fsMap$
                 .pipe(
                     filter((fsMap) => fsMap != undefined),
                     map((fsMap) => {
-                        return fsMap[nativeFile.path]
+                        return fsMap.get(nativeFile.path)
                     }),
                     skip(1),
                 )
-                .subscribe(({ content }) => {
+                .subscribe((content) => {
                     try {
                         nativeFile.subject.next(JSON.parse(content))
                     } catch (_) {
@@ -295,8 +290,8 @@ export class EnvironmentState<
             shareReplay({ bufferSize: 1, refCount: true }),
         )
 
-        /*this.lockFile$.subscribe((lock) => {
-            if (!this.fsMap$.value) {
+        this.lockFile$.subscribe((lock) => {
+            if (!this.ideState.fsMap$.value) {
                 return
             }
             this.ideState.update({
@@ -304,7 +299,7 @@ export class EnvironmentState<
                 content: JSON.stringify(lock, null, 4),
                 updateOrigin: { uid: 'environment.state' },
             })
-        })*/
+        })
         this.lockFile$
             .pipe(mergeMap((lockFile) => this.installLockFile(lockFile)))
             .subscribe()
@@ -313,7 +308,7 @@ export class EnvironmentState<
             signals && signals.save$ ? signals.save$ : of(true),
             this.lockFile$,
             this.configurations$,
-            this.fsMap$.pipe(filter((fsMap) => fsMap != undefined)),
+            this.ideState.fsMap$.pipe(filter((fsMap) => fsMap != undefined)),
         ]).pipe(
             map(([_, lockFile, configurations, fsMap]) => {
                 return {
@@ -368,7 +363,7 @@ export class EnvironmentState<
     }
 
     applyConfigurations() {
-        combineLatest([this.selectedConfiguration$, this.fsMap$])
+        combineLatest([this.selectedConfiguration$, this.ideState.fsMap$])
             .pipe(take(1))
             .subscribe(([configurationName, fileSystem]) => {
                 const configurations = JSON.parse(
@@ -405,7 +400,7 @@ export class EnvironmentState<
         combineLatest([
             this.configurations$,
             this.selectedConfiguration$,
-            this.fsMap$,
+            this.ideState.fsMap$,
         ])
             .pipe(
                 take(1),
