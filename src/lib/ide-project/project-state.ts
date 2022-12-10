@@ -1,5 +1,5 @@
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
-import { IdeState, Project, RawLog } from './models'
+import { IdeState, Project, RawLog, WorkersPool } from './models'
 import { take } from 'rxjs/operators'
 import { MainThreadImplementation } from './main-thread'
 import { WorkersPoolImplementation } from './workers-pool'
@@ -38,6 +38,8 @@ export class ProjectState<TIdeState extends IdeState> {
      * @group Observables
      */
     public readonly rawLog$ = new ReplaySubject<RawLog>()
+
+    public readonly createIdeState: ({ files }) => TIdeState
 
     constructor(params: {
         project: Project
@@ -99,5 +101,31 @@ export class ProjectState<TIdeState extends IdeState> {
                 )
             },
         }
+    }
+
+    addWorkersPool(model: WorkersPool) {
+        const state = new EnvironmentState<
+            WorkersPoolImplementation,
+            TIdeState
+        >({
+            initialModel: model,
+            rawLog$: this.rawLog$,
+            executingImplementation: new WorkersPoolImplementation({
+                name: model.name,
+                capacity: model.capacity,
+            }),
+            createIdeState: this.createIdeState,
+        })
+
+        this.pyWorkersState$.next([...this.pyWorkersState$.value, state])
+        return state
+    }
+
+    deleteWorkersPool(workersPoolState: WorkersPoolState<TIdeState>) {
+        workersPoolState.executingImplementation.terminate()
+        const pools = this.pyWorkersState$.value.filter(
+            (actual_state) => actual_state != workersPoolState,
+        )
+        this.pyWorkersState$.next(pools)
     }
 }
