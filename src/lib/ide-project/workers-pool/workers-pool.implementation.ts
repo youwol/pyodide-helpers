@@ -14,7 +14,11 @@ import {
 } from './utils'
 import { Context } from '../context'
 import { patchPythonSrc, WorkerListener } from '../in-worker-executable'
-import { CdnEvent, InstallLoadingGraphInputs } from '@youwol/cdn-client'
+import {
+    CdnEvent,
+    InstallDoneEvent,
+    InstallLoadingGraphInputs,
+} from '@youwol/cdn-client'
 import { PyodideSetup } from '../../pyodide-setup'
 
 interface EntryPointSyncFsMapArgs {
@@ -158,6 +162,7 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
         return channels.pipe(
             tap(() => {
                 this.workersFactory$.next(workersFactory)
+                cdnEvent$.next(new InstallDoneEvent())
             }),
         )
     }
