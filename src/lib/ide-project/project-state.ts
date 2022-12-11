@@ -1,6 +1,6 @@
 import { BehaviorSubject, ReplaySubject } from 'rxjs'
 import { IdeState, Project, RawLog, WorkersPool } from './models'
-import { take } from 'rxjs/operators'
+import { mergeMap, take } from 'rxjs/operators'
 import { MainThreadImplementation } from './main-thread'
 import { WorkersPoolImplementation } from './workers-pool'
 
@@ -83,9 +83,18 @@ export class ProjectState<TIdeState extends IdeState> {
         >(initialWorkers)
     }
 
-    run() {
-        this.pyWorkersState$.pipe(take(1)).subscribe(() => {
-            this.mainThreadState.run()
+    async run() {
+        return new Promise((resolve) => {
+            this.pyWorkersState$
+                .pipe(take(1))
+                .pipe(
+                    mergeMap(() => {
+                        return this.mainThreadState.run()
+                    }),
+                )
+                .subscribe((result) => {
+                    resolve(result)
+                })
         })
     }
 

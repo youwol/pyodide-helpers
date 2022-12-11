@@ -397,36 +397,33 @@ export class EnvironmentState<
 
     run() {
         this.runStart$.next(true)
-        combineLatest([
+        return combineLatest([
             this.configurations$,
             this.selectedConfiguration$,
             this.ideState.fsMap$,
-        ])
-            .pipe(
-                take(1),
-                map(([configurations, selectedConfigName, fsMap]) => {
-                    const selectedConfig = configurations.find(
-                        (config) => config.name == selectedConfigName,
-                    )
-                    return {
-                        selectedConfig,
-                        fileSystem: fsMap,
-                    }
-                }),
-                mergeMap(({ fileSystem, selectedConfig }) => {
-                    const sourcePath = selectedConfig.scriptPath
-                    const patchedContent = patchPythonSrc(
-                        fileSystem.get(sourcePath),
-                    )
-                    return this.executingImplementation.execPythonCode(
-                        patchedContent,
-                        fileSystem,
-                        this.rawLog$,
-                    )
-                }),
-            )
-            .subscribe(() => {
-                this.runDone$.next(true)
-            })
+        ]).pipe(
+            take(1),
+            map(([configurations, selectedConfigName, fsMap]) => {
+                const selectedConfig = configurations.find(
+                    (config) => config.name == selectedConfigName,
+                )
+                return {
+                    selectedConfig,
+                    fileSystem: fsMap,
+                }
+            }),
+            mergeMap(({ fileSystem, selectedConfig }) => {
+                const sourcePath = selectedConfig.scriptPath
+                const patchedContent = patchPythonSrc(
+                    fileSystem.get(sourcePath),
+                )
+                return this.executingImplementation.execPythonCode(
+                    patchedContent,
+                    fileSystem,
+                    this.rawLog$,
+                )
+            }),
+            tap(() => this.runDone$.next(true)),
+        )
     }
 }
