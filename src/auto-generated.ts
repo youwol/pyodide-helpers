@@ -30,15 +30,6 @@ const externals = {
             "rxjs_APIv6",
             "operators"
         ]
-    },
-    "@youwol/cdn-client/dist/src": {
-        "commonjs": "@youwol/cdn-client/dist/src",
-        "commonjs2": "@youwol/cdn-client/dist/src",
-        "root": [
-            "@youwol/cdn-client_APIv1",
-            "dist",
-            "src"
-        ]
     }
 }
 const exportedSymbols = {
@@ -75,8 +66,8 @@ const entries = {
 export const setup = {
     name:'@youwol/pyodide-helpers',
         assetId:'QHlvdXdvbC9weW9kaWRlLWhlbHBlcnM=',
-    version:'0.1.0-wip',
-    shortDescription:"",
+    version:'0.1.1',
+    shortDescription:"Module providing pyodide helpers for browser based python projects.",
     developerDocumentation:'https://platform.youwol.com/applications/@youwol/cdn-explorer/latest?package=@youwol/pyodide-helpers',
     npmPackage:'https://www.npmjs.com/package/@youwol/pyodide-helpers',
     sourceGithub:'https://github.com/youwol/pyodide-helpers',
@@ -110,7 +101,7 @@ export const setup = {
         const parameters = installParameters || {}
         const scripts = [
             ...(parameters.scripts || []),
-            `@youwol/pyodide-helpers#0.1.0-wip~dist/@youwol/pyodide-helpers/${entry.name}.js`
+            `@youwol/pyodide-helpers#0.1.1~dist/@youwol/pyodide-helpers/${entry.name}.js`
         ]
         const modules = [
             ...(parameters.modules || []),
