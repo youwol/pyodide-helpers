@@ -386,6 +386,13 @@ export class EnvironmentState<
     installLockFile(lockFile: InstallLoadingGraphInputs) {
         this.projectLoaded$.next(false)
         this.cdnEvent$.next('reset')
+        if (lockFile.customInstallers) {
+            lockFile.customInstallers.forEach((installer) => {
+                installer.installInputs['onEvent'] = (cdnEvent) => {
+                    this.cdnEvent$.next(cdnEvent)
+                }
+            })
+        }
         return this.executingImplementation
             .installRequirements(lockFile, this.rawLog$, this.cdnEvent$)
             .pipe(
