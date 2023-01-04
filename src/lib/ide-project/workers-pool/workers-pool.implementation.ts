@@ -150,6 +150,12 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
     ) {
         this.workersFactory$.value && this.workersFactory$.value.terminate()
         this.workersFactory$.next(undefined)
+        // Propagation of the CDN events are handled by the workers factory.
+        // It is not possible to pass functions to the worker anyway.
+        lockFile.customInstallers.forEach((installer) => {
+            installer.installInputs['onEvent'] = undefined
+        })
+
         const { workersFactory, channels } = initializeWorkersPool(
             lockFile,
             this.capacity$.value,
