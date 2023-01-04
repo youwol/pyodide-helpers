@@ -89,7 +89,7 @@ function fetchLoadingGraph(requirements) {
                         module: '@youwol/cdn-pyodide-loader#^0.1.2',
                         installInputs: {
                             loadingGraph: loadingGraphPy,
-                            warmUp: true,
+                            warmUp: false,
                             exportedPyodideInstanceName:
                                 PyodideSetup.ExportedPyodideInstanceName,
                         },
