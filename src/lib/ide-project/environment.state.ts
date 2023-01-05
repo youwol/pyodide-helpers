@@ -73,14 +73,19 @@ function fetchLoadingGraph(requirements) {
                     '@youwol/cdn-pyodide-loader#^0.1.1',
                 ],
             }),
+            /*used to be :
             queryLoadingGraph({
                 modules: requirements.pythonPackages.map(
                     (p) => `@pyodide/${p}`,
                 ),
             }),
+            until a proper way to use lock file for python modules,
+            we just return the python packages to install
+            */
+            requirements.pythonPackages,
         ]),
     ).pipe(
-        map(([loadingGraphJs, loadingGraphPy]) => {
+        map(([loadingGraphJs, modules]) => {
             return {
                 loadingGraph: loadingGraphJs,
                 aliases: requirements.javascriptPackages.aliases,
@@ -88,7 +93,10 @@ function fetchLoadingGraph(requirements) {
                     {
                         module: '@youwol/cdn-pyodide-loader#^0.1.2',
                         installInputs: {
-                            loadingGraph: loadingGraphPy,
+                            /* used to be: loadingGraph: loadingGraphPy
+                               instead of next line. Same reason mentioned above.
+                             */
+                            modules,
                             warmUp: false,
                             exportedPyodideInstanceName:
                                 PyodideSetup.ExportedPyodideInstanceName,
