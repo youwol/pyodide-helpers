@@ -438,7 +438,15 @@ export class EnvironmentState<
                     this.rawLog$,
                 )
             }),
-            tap(() => this.runDone$.next(true)),
+            tap((value) => {
+                if (value instanceof Error) {
+                    this.rawLog$.next({
+                        level: 'error',
+                        message: value.message,
+                    })
+                }
+                this.runDone$.next(true)
+            }),
         )
     }
 }
