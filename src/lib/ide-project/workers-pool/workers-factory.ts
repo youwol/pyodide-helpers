@@ -49,6 +49,7 @@ interface MessageDataExecute {
 
 export interface MessageDataExit {
     taskId: string
+    workerId: string
     error: boolean
     result: unknown
 }
@@ -74,7 +75,7 @@ export interface MessageEventData {
         | 'Log'
         | 'DependencyInstalled'
         | 'Data'
-    data: MessageDataExecute | MessageDataData
+    data: MessageDataExecute | MessageDataData | MessageDataExit
 }
 
 export interface EntryPointArguments<TArgs> {
