@@ -1,4 +1,8 @@
-import { MessageEventData, WorkersFactory } from './workers-factory'
+import {
+    MessageDataExit,
+    MessageEventData,
+    WorkersFactory,
+} from './workers-factory'
 import { RawLog } from '../models'
 import { Subject } from 'rxjs'
 import {
@@ -36,6 +40,11 @@ export interface MessageCdnEventData {
 }
 
 export interface PythonStdOut {
+    message: string
+    workerId: string
+}
+
+export interface ErrorExit {
     message: string
     workerId: string
 }
@@ -80,6 +89,20 @@ export function isPythonStdOutMessage(
     return undefined
 }
 
+export function isErrorExitMessage(
+    message: MessageEventData,
+): undefined | ErrorExit {
+    if (message.type != 'Exit') {
+        return undefined
+    }
+    const data = message.data as unknown as MessageDataExit
+    if (!data.error) {
+        return undefined
+    }
+    const error = data.result as Error
+    return { workerId: data.workerId, message: error.message }
+}
+
 export function isUserDataMessage(
     message: MessageEventData,
 ): undefined | unknown {
@@ -103,6 +126,14 @@ export function dispatchWorkerMessage(
         rawLog$.next({
             level: 'info',
             message: `${stdOut.workerId}:${stdOut.message}`,
+        })
+        return
+    }
+    const errorExit = isErrorExitMessage(message)
+    if (errorExit) {
+        rawLog$.next({
+            level: 'error',
+            message: `${errorExit.workerId}:${errorExit.message}`,
         })
         return
     }

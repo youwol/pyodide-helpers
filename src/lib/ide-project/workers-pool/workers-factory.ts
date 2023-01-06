@@ -49,6 +49,7 @@ interface MessageDataExecute {
 
 export interface MessageDataExit {
     taskId: string
+    workerId: string
     error: boolean
     result: unknown
 }
@@ -74,7 +75,7 @@ export interface MessageEventData {
         | 'Log'
         | 'DependencyInstalled'
         | 'Data'
-    data: MessageDataExecute | MessageDataData
+    data: MessageDataExecute | MessageDataData | MessageDataExit
 }
 
 export interface EntryPointArguments<TArgs> {
@@ -506,15 +507,7 @@ export class WorkersFactory {
                 context.info(data.text, data.json)
             })
 
-        return channel$.pipe(
-            map((message) => {
-                const exitData = message.data as unknown as MessageDataExit
-                if (message.type == 'Exit' && exitData.error) {
-                    throw Error(String(exitData.result))
-                }
-                return message
-            }),
-        )
+        return channel$
     }
 
     getIdleWorkerOrCreate$(context: Context): Observable<{

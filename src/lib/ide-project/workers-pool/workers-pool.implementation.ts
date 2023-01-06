@@ -81,14 +81,23 @@ async function entryPointExe(input: EntryPointArguments<EntryPointExeArgs>) {
         input.context.sendData(objectPyToJs(pyodide, message))
     })
     const namespace = pyodide.toPy(input.args.pythonGlobals)
-    const result = await pyodide.runPythonAsync(input.args.content, {
-        globals: namespace,
-    })
+    let result = undefined
+    try {
+        result = await pyodide.runPythonAsync(input.args.content, {
+            globals: namespace,
+        })
+    } catch (e) {
+        result = e
+    }
+
     sub.unsubscribe()
     return await Promise.all([
         cleanFileSystem(pyodide, input.args.fileSystem),
         cleanJsModules(pyodide, input.args.fileSystem),
     ]).then(() => {
+        if (result instanceof Error) {
+            throw result
+        }
         return objectPyToJs(pyodide, result)
     })
 }

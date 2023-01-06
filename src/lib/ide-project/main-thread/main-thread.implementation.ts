@@ -8,7 +8,7 @@ import {
     ReplaySubject,
     Subject,
 } from 'rxjs'
-import { map, mapTo, mergeMap, scan } from 'rxjs/operators'
+import { catchError, map, mapTo, mergeMap, scan } from 'rxjs/operators'
 
 import { ExecutingImplementation } from '../environment.state'
 import {
@@ -133,11 +133,12 @@ export class MainThreadImplementation implements ExecutingImplementation {
                     globals: pyodide.globals.get('dict')(),
                 })
             }),
-            mergeMap((result) => {
+            catchError((err) => of(err)),
+            mergeMap((resultOrError) => {
                 return forkJoin([
                     cleanFileSystem(pyodide, fileSystem),
                     cleanJsModules(pyodide, fileSystem),
-                ]).pipe(mapTo(result))
+                ]).pipe(mapTo(resultOrError))
             }),
         )
     }
