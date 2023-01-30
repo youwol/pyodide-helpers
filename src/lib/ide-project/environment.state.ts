@@ -32,7 +32,7 @@ import {
     tap,
     withLatestFrom,
 } from 'rxjs/operators'
-import { patchPythonSrc, WorkerListener } from './in-worker-executable'
+import { patchPythonSrc } from './in-worker-executable'
 import { logFactory } from './log-factory.conf'
 import { setup } from '../../auto-generated'
 import { PyodideSetup } from '../pyodide-setup'
@@ -51,9 +51,8 @@ export interface ExecutingImplementation {
         code: string,
         fileSystem: Map<string, string>,
         rawLog$: Subject<RawLog>,
-        pythonGlobals?: Record<string, unknown>,
-        // this next argument should somehow disappear
-        workerListener?: WorkerListener,
+        pythonGlobals: Record<string, unknown>,
+        execArg?: unknown,
     ): Observable<unknown>
 
     installRequirements(
@@ -410,7 +409,7 @@ export class EnvironmentState<
             )
     }
 
-    run() {
+    run(execArgs?: unknown) {
         this.runStart$.next(true)
         return combineLatest([
             this.configurations$,
@@ -436,6 +435,8 @@ export class EnvironmentState<
                     patchedContent,
                     fileSystem,
                     this.rawLog$,
+                    {},
+                    execArgs,
                 )
             }),
             tap((value) => {

@@ -186,8 +186,11 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
         code: string,
         fileSystem: Map<string, string>,
         rawLog$: Subject<RawLog>,
-        pythonGlobals: Record<string, unknown> = {},
-        workerListener: WorkerListener = undefined,
+        pythonGlobals: Record<string, unknown>,
+        options: {
+            workerListener?: WorkerListener
+            targetWorkerId?: string
+        } = {},
     ): Observable<MessageDataExit> {
         return this.workersFactory$.pipe(
             filter((pool) => pool != undefined),
@@ -198,18 +201,19 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
                 return workersPool.schedule({
                     title,
                     entryPoint: entryPointExe,
+                    targetWorkerId: options.targetWorkerId,
                     args: {
                         content: code,
                         fileSystem: fileSystem,
                         exportedPyodideInstanceName:
                             PyodideSetup.ExportedPyodideInstanceName,
-                        pythonGlobals,
+                        pythonGlobals: pythonGlobals,
                     },
                     context,
                 })
             }),
             tap((message) => {
-                dispatchWorkerMessage(message, rawLog$, workerListener)
+                dispatchWorkerMessage(message, rawLog$, options.workerListener)
             }),
             filter((d) => d.type == 'Exit'),
             map((result) => result.data as unknown as MessageDataExit),
@@ -281,7 +285,9 @@ result
                     filesystem,
                     this.rawLog$,
                     { test_glob_var: input.argument },
-                    workerChannel,
+                    {
+                        workerListener: workerChannel,
+                    },
                 )
                 .subscribe((messageResult: MessageDataExit) => {
                     resolve(messageResult.result)

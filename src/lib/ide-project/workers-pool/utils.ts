@@ -138,7 +138,7 @@ export function dispatchWorkerMessage(
         return
     }
     const userData = isUserDataMessage(message)
-    if (userData) {
+    if (userData && workerListener) {
         workerListener.emit(userData)
         return
     }
