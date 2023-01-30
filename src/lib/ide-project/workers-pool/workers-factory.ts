@@ -92,6 +92,8 @@ declare const self: DedicatedWorkerGlobalScope
 function entryPointWorker(messageEvent: MessageEvent) {
     const message: MessageEventData = messageEvent.data
     const workerScope: DedicatedWorkerGlobalScope = self
+    // Following is a workaround: if not done, the @youwol/cdn-client will complain of undefined 'window' and
+    // will fail installing dependencies. It is a bug in @youwol/cdn-client, see TG#488.
     workerScope['window'] = self
     if (message.type == 'Execute') {
         const data: MessageDataExecute =
