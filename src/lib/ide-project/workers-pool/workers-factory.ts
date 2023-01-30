@@ -85,9 +85,13 @@ export interface EntryPointArguments<TArgs> {
     workerScope
 }
 
+// If not done, 'self' is miss-interpreted as being 'Window' and not 'DedicatedWorkerGlobalScope'.
+// If miss-interpreted, 'workerScope.postMessage' signature does not match (complains about 'targetOrigin' missing).
+declare const self: DedicatedWorkerGlobalScope
+
 function entryPointWorker(messageEvent: MessageEvent) {
     const message: MessageEventData = messageEvent.data
-    const workerScope = self
+    const workerScope: DedicatedWorkerGlobalScope = self
     workerScope['window'] = self
     if (message.type == 'Execute') {
         const data: MessageDataExecute =
