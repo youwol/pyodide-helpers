@@ -304,6 +304,7 @@ export class Process {
 
 export class WorkersFactory {
     public readonly poolSize = navigator.hardwareConcurrency - 2
+    private requestedWorkersCount = 0
 
     public readonly mergedChannel$ = new Subject<MessageEventData>()
     public readonly workers$ = new BehaviorSubject<{
@@ -534,7 +535,7 @@ export class WorkersFactory {
                     channel$: this.workers$.value[idleWorkerId].channel$,
                 })
             }
-            if (Object.keys(this.workers$.value).length < this.poolSize) {
+            if (this.requestedWorkersCount < this.poolSize) {
                 return this.createWorker$(ctx)
             }
             return undefined
@@ -547,6 +548,7 @@ export class WorkersFactory {
         channel$: Observable<MessageEventData>
     }> {
         return context.withChild('create worker', (ctx) => {
+            this.requestedWorkersCount++
             const workerId = `w${Math.floor(Math.random() * 1e6)}`
             ctx.info(`Create worker ${workerId}`)
 
