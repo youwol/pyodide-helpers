@@ -86,8 +86,21 @@ export interface EntryPointArguments<TArgs> {
 }
 
 function entryPointWorker(messageEvent: MessageEvent) {
+    // The following interface avoid the interpreter to interpret self as 'Window':
+    // in a worker 'self' is of type DedicatedWorkerGlobalScope.
+    // We can get a proper type definition for DedicatedWorkerGlobalScope from typescript:
+    //   * add 'webworker' in 'compilerOptions.lib'
+    //   * **BUT** typedoc then fails to run, complaining about duplicated declaration.
+    // Not sure how to fix this, we keep the documentation working for now using this workaround
+    interface DedicatedWorkerGlobalScope {
+        // message type: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm
+        postMessage: (message: unknown) => void
+    }
+
     const message: MessageEventData = messageEvent.data
-    const workerScope = self
+    const workerScope = self as unknown as DedicatedWorkerGlobalScope
+    // Following is a workaround: if not done, the @youwol/cdn-client will complain of undefined 'window' and
+    // will fail installing dependencies. It is a bug in @youwol/cdn-client, see TG#488.
     workerScope['window'] = self
     if (message.type == 'Execute') {
         const data: MessageDataExecute =
@@ -298,6 +311,7 @@ export class Process {
 
 export class WorkersFactory {
     public readonly poolSize = navigator.hardwareConcurrency - 2
+    private requestedWorkersCount = 0
 
     public readonly mergedChannel$ = new Subject<MessageEventData>()
     public readonly workers$ = new BehaviorSubject<{
@@ -528,7 +542,7 @@ export class WorkersFactory {
                     channel$: this.workers$.value[idleWorkerId].channel$,
                 })
             }
-            if (Object.keys(this.workers$.value).length < this.poolSize) {
+            if (this.requestedWorkersCount < this.poolSize) {
                 return this.createWorker$(ctx)
             }
             return undefined
@@ -541,6 +555,7 @@ export class WorkersFactory {
         channel$: Observable<MessageEventData>
     }> {
         return context.withChild('create worker', (ctx) => {
+            this.requestedWorkersCount++
             const workerId = `w${Math.floor(Math.random() * 1e6)}`
             ctx.info(`Create worker ${workerId}`)
 
