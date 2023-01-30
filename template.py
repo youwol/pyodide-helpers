@@ -42,9 +42,8 @@ shutil.copyfile(
     dst=folder_path / 'src' / 'auto-generated.ts'
 )
 
-# 'tsconfig.json' is removed from the following list as we add 'webworker' to compilerOptions.lib
 for file in ['README.md', '.gitignore', '.npmignore', '.prettierignore', 'LICENSE', 'package.json',
-             'webpack.config.ts']:
+             'tsconfig.json', 'webpack.config.ts']:
     shutil.copyfile(
         src=folder_path / '.template' / file,
         dst=folder_path / file

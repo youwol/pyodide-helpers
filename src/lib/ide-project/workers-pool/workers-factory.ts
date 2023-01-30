@@ -85,13 +85,20 @@ export interface EntryPointArguments<TArgs> {
     workerScope
 }
 
-// If not done, 'self' is miss-interpreted as being 'Window' and not 'DedicatedWorkerGlobalScope'.
-// If miss-interpreted, 'workerScope.postMessage' signature does not match (complains about 'targetOrigin' missing).
-declare const self: DedicatedWorkerGlobalScope
-
 function entryPointWorker(messageEvent: MessageEvent) {
+    // The following interface avoid the interpreter to interpret self as 'Window':
+    // in a worker 'self' is of type DedicatedWorkerGlobalScope.
+    // We can get a proper type definition for DedicatedWorkerGlobalScope from typescript:
+    //   * add 'webworker' in 'compilerOptions.lib'
+    //   * **BUT** typedoc then fails to run, complaining about duplicated declaration.
+    // Not sure how to fix this, we keep the documentation working for now using this workaround
+    interface DedicatedWorkerGlobalScope {
+        // message type: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm
+        postMessage: (message: unknown) => void
+    }
+
     const message: MessageEventData = messageEvent.data
-    const workerScope: DedicatedWorkerGlobalScope = self
+    const workerScope = self as unknown as DedicatedWorkerGlobalScope
     // Following is a workaround: if not done, the @youwol/cdn-client will complain of undefined 'window' and
     // will fail installing dependencies. It is a bug in @youwol/cdn-client, see TG#488.
     workerScope['window'] = self

@@ -1,6 +1,3 @@
 {
-    "extends": "@youwol/tsconfig/tsconfig.json",
-    "compilerOptions": {
-        "lib": ["dom", "es2020", "webworker"]
-    }
+    "extends": "@youwol/tsconfig/tsconfig.json"
 }
