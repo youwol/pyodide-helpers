@@ -1,10 +1,10 @@
-import { BehaviorSubject, ReplaySubject } from 'rxjs'
+import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs'
 import { IdeState, Project, RawLog, WorkersPool } from './models'
-import { mergeMap, take } from 'rxjs/operators'
+import { map, mergeMap, shareReplay, switchMap, take } from 'rxjs/operators'
 import { MainThreadImplementation } from './main-thread'
 import { WorkersPoolImplementation } from './workers-pool'
 
-import { EnvironmentState } from './environment.state'
+import { EnvironmentState, ExecutingImplementation } from './environment.state'
 
 type MainThreadState<T extends IdeState> = EnvironmentState<
     MainThreadImplementation,
@@ -38,6 +38,11 @@ export class ProjectState<TIdeState extends IdeState> {
      * @group Observables
      */
     public readonly rawLog$ = new ReplaySubject<RawLog>()
+
+    /**
+     * @group Observables
+     */
+    public readonly project$: Observable<Project>
 
     public readonly createIdeState: ({ files }) => TIdeState
 
@@ -81,6 +86,18 @@ export class ProjectState<TIdeState extends IdeState> {
         this.pyWorkersState$ = new BehaviorSubject<
             WorkersPoolState<TIdeState>[]
         >(initialWorkers)
+
+        this.project$ = this.mergeEnvObservable(
+            (state) => state.serialized$,
+        ).pipe(
+            map(([project, ...workers]: [Project, WorkersPool]) => {
+                return {
+                    ...project,
+                    workersPools: workers,
+                }
+            }),
+            shareReplay({ bufferSize: 1, refCount: true }),
+        )
     }
 
     async run() {
@@ -136,5 +153,20 @@ export class ProjectState<TIdeState extends IdeState> {
             (actual_state) => actual_state != workersPoolState,
         )
         this.pyWorkersState$.next(pools)
+    }
+
+    public mergeEnvObservable(
+        toObs: (
+            state: EnvironmentState<ExecutingImplementation, TIdeState>,
+        ) => Observable<unknown>,
+    ) {
+        return this.pyWorkersState$.pipe(
+            switchMap((workers) => {
+                return combineLatest([
+                    toObs(this.mainThreadState),
+                    ...workers.map((w) => toObs(w)),
+                ])
+            }),
+        )
     }
 }
