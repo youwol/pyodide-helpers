@@ -166,7 +166,11 @@ export function initializeWorkersPool(
     const cdnPackage = '@youwol/cdn-client'
     const workersFactory = new WorkersFactory({
         cdnEvent$,
-        cdnUrl: `${window.location.origin}${getUrlBase(
+        hostName:
+            window.location.origin != 'null'
+                ? window.location.origin
+                : window.location.ancestorOrigins[0],
+        cdnUrl: `${getUrlBase(
             cdnPackage,
             cdnSetup.version,
         )}/dist/${cdnPackage}.js`,

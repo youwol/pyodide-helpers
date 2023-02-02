@@ -29,6 +29,7 @@ interface Task {
 
 interface WorkerEnvironment {
     cdnUrl: string
+    hostName: string
     variables: WorkerVariable<unknown>[]
     functions: WorkerFunction<unknown>[]
     cdnInstallation: InstallInputs | InstallLoadingGraphInputs
@@ -198,6 +199,7 @@ function entryPointWorker(messageEvent: MessageEvent) {
 
 export interface MessageDataInstall {
     cdnUrl: string
+    hostName: string
     variables: WorkerVariable<unknown>[]
     functions: { id: string; target: string }[]
     cdnInstallation: InstallInputs | InstallLoadingGraphInputs
@@ -219,9 +221,11 @@ function entryPointInstall(input: EntryPointArguments<MessageDataInstall>) {
         return (body as InstallLoadingGraphInputs).loadingGraph !== undefined
     }
 
-    self['importScripts'](input.args.cdnUrl)
+    console.log('Install environment in worker', input)
+
+    self['importScripts'](`${input.args.hostName}${input.args.cdnUrl}`)
     const cdn = self['@youwol/cdn-client']
-    cdn.Client.HostName = window.location.origin
+    cdn.Client.HostName = input.args.hostName
 
     const onEvent = (cdnEvent) => {
         const message = { type: 'CdnEvent', event: cdnEvent }
@@ -348,10 +352,12 @@ export class WorkersFactory {
         variables,
         functions,
         cdnInstallation,
+        hostName,
         cdnUrl,
         postInstallTasks,
     }: {
         cdnEvent$: Subject<CdnEvent>
+        hostName: string
         cdnUrl: string
         variables?: { [_k: string]: unknown }
         functions?: { [_k: string]: unknown }
@@ -374,6 +380,7 @@ export class WorkersFactory {
         })
         this.environment = {
             cdnUrl,
+            hostName,
             variables: Object.entries(variables || {}).map(([id, value]) => ({
                 id,
                 value,
@@ -580,34 +587,31 @@ export class WorkersFactory {
                 this.mergedChannel$.next(data)
             }
             const taskChannel$ = this.getTaskChannel$(p, taskId, context)
-
+            const argsInstall: MessageDataInstall = {
+                cdnUrl: this.environment.cdnUrl,
+                hostName: this.environment.hostName,
+                variables: this.environment.variables,
+                functions: this.environment.functions.map(({ id, target }) => ({
+                    id,
+                    target: `return ${String(target)}`,
+                })),
+                cdnInstallation: this.environment.cdnInstallation,
+                postInstallTasks: this.environment.postInstallTasks.map(
+                    (task) => {
+                        return {
+                            title: task.title,
+                            args: task.args,
+                            entryPoint: `return ${String(task.entryPoint)}`,
+                        }
+                    },
+                ),
+            }
             worker.postMessage({
                 type: 'Execute',
                 data: {
                     taskId,
                     workerId,
-                    args: {
-                        cdnUrl: this.environment.cdnUrl,
-                        variables: this.environment.variables,
-                        functions: this.environment.functions.map(
-                            ({ id, target }) => ({
-                                id,
-                                target: `return ${String(target)}`,
-                            }),
-                        ),
-                        cdnInstallation: this.environment.cdnInstallation,
-                        postInstallTasks: this.environment.postInstallTasks.map(
-                            (task) => {
-                                return {
-                                    title: task.title,
-                                    args: task.args,
-                                    entryPoint: `return ${String(
-                                        task.entryPoint,
-                                    )}`,
-                                }
-                            },
-                        ),
-                    },
+                    args: argsInstall,
                     entryPoint: `return ${String(entryPointInstall)}`,
                 },
             })
