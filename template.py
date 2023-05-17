@@ -43,7 +43,7 @@ shutil.copyfile(
 )
 
 for file in ['README.md', '.gitignore', '.npmignore', '.prettierignore', 'LICENSE', 'package.json',
-             'tsconfig.json', 'webpack.config.ts']:
+             'tsconfig.json', 'webpack.config.ts', 'jest.config.ts']:
     shutil.copyfile(
         src=folder_path / '.template' / file,
         dst=folder_path / file
