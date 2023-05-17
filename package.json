@@ -1,7 +1,7 @@
 {
     "name": "@youwol/pyodide-helpers",
     "description": "Module providing pyodide helpers for browser based python projects.",
-    "version": "0.1.4-wip",
+    "version": "0.1.4",
     "author": "greinisch@youwol.com",
     "homepage": "https://github.com/youwol/pyodide-helpers#README.md",
     "main": "dist/@youwol/pyodide-helpers.js",

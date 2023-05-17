@@ -65,7 +65,7 @@ const entries = {
 export const setup = {
     name:'@youwol/pyodide-helpers',
         assetId:'QHlvdXdvbC9weW9kaWRlLWhlbHBlcnM=',
-    version:'0.1.4-wip',
+    version:'0.1.4',
     shortDescription:"Module providing pyodide helpers for browser based python projects.",
     developerDocumentation:'https://platform.youwol.com/applications/@youwol/cdn-explorer/latest?package=@youwol/pyodide-helpers',
     npmPackage:'https://www.npmjs.com/package/@youwol/pyodide-helpers',
@@ -111,7 +111,7 @@ export const setup = {
         const parameters = installParameters || {}
         const scripts = [
             ...(parameters.scripts || []),
-            `@youwol/pyodide-helpers#0.1.4-wip~dist/@youwol/pyodide-helpers/${entry.name}.js`
+            `@youwol/pyodide-helpers#0.1.4~dist/@youwol/pyodide-helpers/${entry.name}.js`
         ]
         const modules = [
             ...(parameters.modules || []),
