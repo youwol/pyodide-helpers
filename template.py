@@ -9,7 +9,7 @@ folder_path = Path(__file__).parent
 
 pkg_json = parse_json(folder_path / 'package.json')
 load_dependencies = {
-    '@youwol/cdn-client': '^1.0.9',
+    '@youwol/cdn-client': '^2.0.3',
     'rxjs': '^6.5.5',
     "@youwol/logging": "^0.1.0",
 }

@@ -1,7 +1,7 @@
 
 const runTimeDependencies = {
     "externals": {
-        "@youwol/cdn-client": "^1.0.9",
+        "@youwol/cdn-client": "^2.0.3",
         "rxjs": "^6.5.5",
         "@youwol/logging": "^0.1.0"
     },
@@ -11,7 +11,7 @@ const externals = {
     "@youwol/cdn-client": {
         "commonjs": "@youwol/cdn-client",
         "commonjs2": "@youwol/cdn-client",
-        "root": "@youwol/cdn-client_APIv1"
+        "root": "@youwol/cdn-client_APIv2"
     },
     "rxjs": {
         "commonjs": "rxjs",
@@ -34,7 +34,7 @@ const externals = {
 }
 const exportedSymbols = {
     "@youwol/cdn-client": {
-        "apiKey": "1",
+        "apiKey": "2",
         "exportedSymbol": "@youwol/cdn-client"
     },
     "rxjs": {
