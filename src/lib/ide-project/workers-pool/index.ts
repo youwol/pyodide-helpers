@@ -4,5 +4,4 @@
  * @module WorkersPool
  */
 export * from './workers-pool.implementation'
-export * from './workers-factory'
 export * from './utils'

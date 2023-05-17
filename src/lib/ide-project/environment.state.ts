@@ -347,7 +347,7 @@ export class EnvironmentState<
         )
         this.cdnEvents$ = this.cdnEvent$.pipe(
             scan((acc, e) => {
-                if (e == 'reset') {
+                if (e.id == 'reset') {
                     return []
                 }
                 return [...acc, e]
@@ -392,7 +392,12 @@ export class EnvironmentState<
 
     installLockFile(lockFile: InstallLoadingGraphInputs) {
         this.projectLoaded$.next(false)
-        this.cdnEvent$.next('reset')
+        this.cdnEvent$.next({
+            id: 'reset',
+            step: 'CdnMessageEvent',
+            status: 'None',
+            text: 'Start install',
+        })
         if (lockFile.customInstallers) {
             lockFile.customInstallers.forEach((installer) => {
                 installer.installInputs['onEvent'] = (cdnEvent) => {

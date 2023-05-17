@@ -1,8 +1,3 @@
-import {
-    MessageDataExit,
-    MessageEventData,
-    WorkersFactory,
-} from './workers-factory'
 import { RawLog } from '../models'
 import { Subject } from 'rxjs'
 import {
@@ -15,29 +10,13 @@ import {
     WorkerListener,
 } from '../in-worker-executable'
 import {
-    CdnEvent,
-    getUrlBase,
+    WorkersPoolTypes,
     InstallLoadingGraphInputs,
-    setup as cdnSetup,
+    WorkersModule,
 } from '@youwol/cdn-client'
 import { setup } from '../../../auto-generated'
 import { entryRegisterPyPlayAddOns } from './workers-pool.implementation'
 import { PyodideSetup } from '../../pyodide-setup'
-
-export interface CdnEventWorker {
-    text: string
-    workerId: string
-    id: string
-}
-
-export interface MessageCdnEventData {
-    type: string
-    workerId: string
-    event: {
-        id: string
-        text: string
-    }
-}
 
 export interface PythonStdOut {
     message: string
@@ -63,21 +42,8 @@ export interface MessageUserData {
     data: unknown
 }
 
-export function isCdnEventMessage(
-    message: MessageEventData,
-): undefined | CdnEventWorker {
-    if (message.type != 'Data') {
-        return undefined
-    }
-    const data = message.data as unknown as MessageCdnEventData
-    if (data.type == 'CdnEvent') {
-        return { ...data.event, workerId: data.workerId }
-    }
-    return undefined
-}
-
 export function isPythonStdOutMessage(
-    message: MessageEventData,
+    message: WorkersPoolTypes.Message,
 ): undefined | PythonStdOut {
     if (message.type != 'Data') {
         return undefined
@@ -90,12 +56,12 @@ export function isPythonStdOutMessage(
 }
 
 export function isErrorExitMessage(
-    message: MessageEventData,
+    message: WorkersPoolTypes.Message,
 ): undefined | ErrorExit {
     if (message.type != 'Exit') {
         return undefined
     }
-    const data = message.data as unknown as MessageDataExit
+    const data = message.data as unknown as WorkersPoolTypes.MessageExit
     if (!data.error) {
         return undefined
     }
@@ -104,7 +70,7 @@ export function isErrorExitMessage(
 }
 
 export function isUserDataMessage(
-    message: MessageEventData,
+    message: WorkersPoolTypes.Message,
 ): undefined | unknown {
     if (message.type != 'Data') {
         return undefined
@@ -117,7 +83,7 @@ export function isUserDataMessage(
 }
 
 export function dispatchWorkerMessage(
-    message: MessageEventData,
+    message: WorkersPoolTypes.Message,
     rawLog$: Subject<RawLog>,
     workerListener: WorkerListener,
 ) {
@@ -161,20 +127,12 @@ to_js(object, dict_converter= Object.fromEntries)
 export function initializeWorkersPool(
     lockFile: InstallLoadingGraphInputs,
     minWorkersCount: number,
-    cdnEvent$: Subject<CdnEvent>,
+    cdnEvent$: Subject<WorkersPoolTypes.CdnEventWorker>,
+    wpModule: WorkersModule,
 ) {
-    const cdnPackage = '@youwol/cdn-client'
-    const workersFactory = new WorkersFactory({
+    const workersFactory = new wpModule.WorkersPool({
         cdnEvent$,
-        hostName:
-            window.location.origin != 'null'
-                ? window.location.origin
-                : window.location.ancestorOrigins[0],
-        cdnUrl: `${getUrlBase(
-            cdnPackage,
-            cdnSetup.version,
-        )}/dist/${cdnPackage}.js`,
-        functions: {
+        globals: {
             objectPyToJs: objectPyToJs,
             syncFileSystem: syncFileSystem,
             cleanFileSystem: cleanFileSystem,
@@ -183,7 +141,7 @@ export function initializeWorkersPool(
             registerYwPyodideModule: registerYwPyodideModule,
             getModuleNameFromFile: getModuleNameFromFile,
         },
-        cdnInstallation: lockFile,
+        install: lockFile,
         postInstallTasks: [
             {
                 title: 'register py-play add-ons',
