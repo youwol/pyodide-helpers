@@ -93,6 +93,10 @@ async function entryPointExe(
             globals: namespace,
         })
     } catch (e) {
+        console.error(
+            `Python execution failed, ${input.workerId}#${input.taskId}`,
+            e,
+        )
         result = e
     }
 
