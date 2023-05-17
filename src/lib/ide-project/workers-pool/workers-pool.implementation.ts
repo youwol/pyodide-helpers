@@ -57,8 +57,7 @@ export function entryRegisterPyPlayAddOns(
             },
         },
     })
-
-    return Promise.all([registerYwPyodideModule(pyodide, outputs)])
+    return registerYwPyodideModule(pyodide, outputs)
 }
 
 interface EntryPointExeArgs {
