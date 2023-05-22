@@ -9,7 +9,7 @@ folder_path = Path(__file__).parent
 
 pkg_json = parse_json(folder_path / 'package.json')
 load_dependencies = {
-    '@youwol/cdn-client': '^1.0.9',
+    '@youwol/cdn-client': '^2.0.3',
     'rxjs': '^6.5.5',
     "@youwol/logging": "^0.1.0",
 }
@@ -43,7 +43,7 @@ shutil.copyfile(
 )
 
 for file in ['README.md', '.gitignore', '.npmignore', '.prettierignore', 'LICENSE', 'package.json',
-             'tsconfig.json', 'webpack.config.ts']:
+             'tsconfig.json', 'webpack.config.ts', 'jest.config.ts']:
     shutil.copyfile(
         src=folder_path / '.template' / file,
         dst=folder_path / file

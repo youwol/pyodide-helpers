@@ -1,7 +1,7 @@
 
 const runTimeDependencies = {
     "externals": {
-        "@youwol/cdn-client": "^1.0.9",
+        "@youwol/cdn-client": "^2.0.3",
         "rxjs": "^6.5.5",
         "@youwol/logging": "^0.1.0"
     },
@@ -11,7 +11,7 @@ const externals = {
     "@youwol/cdn-client": {
         "commonjs": "@youwol/cdn-client",
         "commonjs2": "@youwol/cdn-client",
-        "root": "@youwol/cdn-client_APIv1"
+        "root": "@youwol/cdn-client_APIv2"
     },
     "rxjs": {
         "commonjs": "rxjs",
@@ -34,7 +34,7 @@ const externals = {
 }
 const exportedSymbols = {
     "@youwol/cdn-client": {
-        "apiKey": "1",
+        "apiKey": "2",
         "exportedSymbol": "@youwol/cdn-client"
     },
     "rxjs": {
@@ -65,7 +65,7 @@ const entries = {
 export const setup = {
     name:'@youwol/pyodide-helpers',
         assetId:'QHlvdXdvbC9weW9kaWRlLWhlbHBlcnM=',
-    version:'0.1.3',
+    version:'0.1.4',
     shortDescription:"Module providing pyodide helpers for browser based python projects.",
     developerDocumentation:'https://platform.youwol.com/applications/@youwol/cdn-explorer/latest?package=@youwol/pyodide-helpers',
     npmPackage:'https://www.npmjs.com/package/@youwol/pyodide-helpers',
@@ -111,7 +111,7 @@ export const setup = {
         const parameters = installParameters || {}
         const scripts = [
             ...(parameters.scripts || []),
-            `@youwol/pyodide-helpers#0.1.3~dist/@youwol/pyodide-helpers/${entry.name}.js`
+            `@youwol/pyodide-helpers#0.1.4~dist/@youwol/pyodide-helpers/${entry.name}.js`
         ]
         const modules = [
             ...(parameters.modules || []),

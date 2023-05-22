@@ -1,12 +1,21 @@
 import { EnvironmentState, ExecutingImplementation } from '../environment.state'
 import { IdeState, RawLog, WorkerCommon } from '../models'
-import { BehaviorSubject, Observable, Subject } from 'rxjs'
-import { filter, map, mergeMap, skip, take, tap } from 'rxjs/operators'
+import { BehaviorSubject, from, Observable, Subject } from 'rxjs'
 import {
-    EntryPointArguments,
-    MessageDataExit,
-    WorkersFactory,
-} from './workers-factory'
+    filter,
+    map,
+    mergeMap,
+    skip,
+    switchMap,
+    take,
+    tap,
+} from 'rxjs/operators'
+import {
+    WorkersPoolTypes,
+    InstallLoadingGraphInputs,
+    installWorkersPoolModule,
+} from '@youwol/cdn-client'
+
 import {
     dispatchWorkerMessage,
     initializeWorkersPool,
@@ -14,11 +23,6 @@ import {
 } from './utils'
 import { Context } from '../context'
 import { patchPythonSrc, WorkerListener } from '../in-worker-executable'
-import {
-    CdnEvent,
-    InstallDoneEvent,
-    InstallLoadingGraphInputs,
-} from '@youwol/cdn-client'
 import { PyodideSetup } from '../../pyodide-setup'
 
 interface EntryPointSyncFsMapArgs {
@@ -27,7 +31,7 @@ interface EntryPointSyncFsMapArgs {
 }
 
 export function entryRegisterPyPlayAddOns(
-    input: EntryPointArguments<EntryPointSyncFsMapArgs>,
+    input: WorkersPoolTypes.EntryPointArguments<EntryPointSyncFsMapArgs>,
 ) {
     const pyodide = self[input.args.exportedPyodideInstanceName]
     const registerYwPyodideModule = self['registerYwPyodideModule']
@@ -53,8 +57,7 @@ export function entryRegisterPyPlayAddOns(
             },
         },
     })
-
-    return Promise.all([registerYwPyodideModule(pyodide, outputs)])
+    return registerYwPyodideModule(pyodide, outputs)
 }
 
 interface EntryPointExeArgs {
@@ -64,7 +67,9 @@ interface EntryPointExeArgs {
     pythonGlobals: Record<string, unknown>
 }
 
-async function entryPointExe(input: EntryPointArguments<EntryPointExeArgs>) {
+async function entryPointExe(
+    input: WorkersPoolTypes.EntryPointArguments<EntryPointExeArgs>,
+) {
     const pyodide = self[input.args.exportedPyodideInstanceName]
     const pythonChannel$ = new self['rxjs_APIv6'].ReplaySubject(1)
     self['getPythonChannel$'] = () => pythonChannel$
@@ -87,6 +92,10 @@ async function entryPointExe(input: EntryPointArguments<EntryPointExeArgs>) {
             globals: namespace,
         })
     } catch (e) {
+        console.error(
+            `Python execution failed, ${input.workerId}#${input.taskId}`,
+            e,
+        )
         result = e
     }
 
@@ -114,9 +123,8 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
     /**
      * @group Observables
      */
-    public readonly workersFactory$ = new BehaviorSubject<WorkersFactory>(
-        undefined,
-    )
+    public readonly workersFactory$ =
+        new BehaviorSubject<WorkersPoolTypes.WorkersPool>(undefined)
 
     /**
      * @group Observables
@@ -155,7 +163,7 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
     installRequirements(
         lockFile: InstallLoadingGraphInputs,
         rawLog$: Subject<RawLog>,
-        cdnEvent$: Subject<CdnEvent>,
+        cdnEvent$: Subject<WorkersPoolTypes.CdnEventWorker>,
     ) {
         this.workersFactory$.value && this.workersFactory$.value.terminate()
         this.workersFactory$.next(undefined)
@@ -164,20 +172,19 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
         lockFile.customInstallers.forEach((installer) => {
             installer.installInputs['onEvent'] = undefined
         })
-
-        const { workersFactory, channels } = initializeWorkersPool(
-            lockFile,
-            this.capacity$.value,
-            cdnEvent$,
-        )
-
-        workersFactory.busyWorkers$.subscribe((workers) => {
-            this.busyWorkers$.next(workers)
-        })
-        return channels.pipe(
-            tap(() => {
+        return from(installWorkersPoolModule()).pipe(
+            switchMap((WorkerPoolMdle) => {
+                const { workersFactory, channels } = initializeWorkersPool(
+                    lockFile,
+                    this.capacity$.value,
+                    cdnEvent$,
+                    WorkerPoolMdle,
+                )
+                workersFactory.busyWorkers$.subscribe((workers) => {
+                    this.busyWorkers$.next(workers)
+                })
                 this.workersFactory$.next(workersFactory)
-                cdnEvent$.next(new InstallDoneEvent())
+                return channels
             }),
         )
     }
@@ -191,32 +198,37 @@ export class WorkersPoolImplementation implements ExecutingImplementation {
             workerListener?: WorkerListener
             targetWorkerId?: string
         } = {},
-    ): Observable<MessageDataExit> {
+    ): Observable<WorkersPoolTypes.MessageExit> {
         return this.workersFactory$.pipe(
             filter((pool) => pool != undefined),
             take(1),
             mergeMap((workersPool) => {
                 const title = 'Execute python'
                 const context = new Context(title)
-                return workersPool.schedule({
-                    title,
-                    entryPoint: entryPointExe,
-                    targetWorkerId: options.targetWorkerId,
-                    args: {
-                        content: code,
-                        fileSystem: fileSystem,
-                        exportedPyodideInstanceName:
-                            PyodideSetup.ExportedPyodideInstanceName,
-                        pythonGlobals: pythonGlobals,
+                return workersPool.schedule(
+                    {
+                        title,
+                        entryPoint: entryPointExe,
+                        targetWorkerId: options.targetWorkerId,
+                        args: {
+                            content: code,
+                            fileSystem: fileSystem,
+                            exportedPyodideInstanceName:
+                                PyodideSetup.ExportedPyodideInstanceName,
+                            pythonGlobals: pythonGlobals,
+                        },
                     },
                     context,
-                })
+                )
             }),
             tap((message) => {
                 dispatchWorkerMessage(message, rawLog$, options.workerListener)
             }),
             filter((d) => d.type == 'Exit'),
-            map((result) => result.data as unknown as MessageDataExit),
+            map(
+                (result) =>
+                    result.data as unknown as WorkersPoolTypes.MessageExit,
+            ),
             take(1),
         )
     }
@@ -289,7 +301,7 @@ result
                         workerListener: workerChannel,
                     },
                 )
-                .subscribe((messageResult: MessageDataExit) => {
+                .subscribe((messageResult: WorkersPoolTypes.MessageExit) => {
                     resolve(messageResult.result)
                 })
         })
