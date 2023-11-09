@@ -169,7 +169,11 @@ export class Log {
  * Class specialization of  [[Log]] for errors.
  */
 export class ErrorLog<TError extends Error, TData = unknown> extends Log {
-    constructor(context: Context, public readonly error: TError, data: TData) {
+    constructor(
+        context: Context,
+        public readonly error: TError,
+        data: TData,
+    ) {
         super(context, error.message, data)
     }
 }
@@ -180,7 +184,11 @@ export class ErrorLog<TError extends Error, TData = unknown> extends Log {
  * Class specialization of [[Log]] for warnings.
  */
 export class WarningLog extends Log {
-    constructor(context: Context, public readonly text: string, data: unknown) {
+    constructor(
+        context: Context,
+        public readonly text: string,
+        data: unknown,
+    ) {
         super(context, text, data)
     }
 }
@@ -191,7 +199,11 @@ export class WarningLog extends Log {
  * Class specialization of [[Log]] for info.
  */
 export class InfoLog extends Log {
-    constructor(context: Context, public readonly text: string, data: unknown) {
+    constructor(
+        context: Context,
+        public readonly text: string,
+        data: unknown,
+    ) {
         super(context, text, data)
     }
 }
